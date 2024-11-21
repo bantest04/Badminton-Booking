@@ -5,50 +5,58 @@ const { validateTimeslot } = require('../lib/validation');
 class TimeslotController {
   // Create timeslot
   async createTimeslot(req, res) {
-    try {
-      const { error } = validateTimeslot(req.body);
-      if (error) {
-        return res.status(400).json({ error: error.details[0].message });
+      try {
+          const {
+              bookingID,
+              courtID,
+              startTime,
+              endTime,
+              dayOfWeek,
+              duration
+          } = req.body;
+
+          const timeslot = new BookingTimeslot({
+              timeslotID: `TS${Date.now()}`,
+              bookingID,
+              courtID,
+              startTime: new Date(startTime),
+              endTime: new Date(endTime),
+              dayOfWeek,
+              duration
+          });
+
+          await timeslot.save();
+
+          res.status(201).json({
+              success: true,
+              data: timeslot
+          });
+      } catch (error) {
+          res.status(500).json({
+              success: false,
+              message: 'Lỗi khi tạo timeslot',
+              error: error.message
+          });
       }
-
-      // Check if booking exists
-      const booking = await Booking.findOne({ bookingID: req.body.bookingID });
-      if (!booking) {
-        return res.status(404).json({ error: 'Booking not found' });
-      }
-
-      // Check for timeslot conflicts
-      const isConflict = await BookingTimeslot.checkConflict(
-        req.body.startTime,
-        req.body.endTime,
-        req.body.courtID,
-        req.body.dayOfWeek
-      );
-
-      if (isConflict) {
-        return res.status(400).json({ error: 'Timeslot conflict exists' });
-      }
-
-      const timeslot = new BookingTimeslot(req.body);
-      await timeslot.save();
-
-      res.status(201).json(timeslot);
-    } catch (error) {
-      res.status(400).json({ error: error.message });
-    }
   }
 
   // Get all timeslots
   async getTimeslots(req, res) {
     try {
-      const timeslots = await BookingTimeslot.find()
-        .populate('bookingID')
-        .sort({ dayOfWeek: 1, startTime: 1 });
-      res.json(timeslots);
+        const timeslots = await BookingTimeslot.find()
+            .select('startTime endTime courtID')
+            .sort({ startTime: 1 });
+
+        res.json(timeslots);
     } catch (error) {
-      res.status(500).json({ error: error.message });
+        console.error('Error fetching timeslots:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi khi lấy danh sách timeslot',
+            error: error.message
+        });
     }
-  }
+}
 
   // Get timeslot by ID
   async getTimeslotById(req, res) {
@@ -116,26 +124,54 @@ class TimeslotController {
     }
   }
 
-  // Get available timeslots
   async getAvailableTimeslots(req, res) {
     try {
-      const { date, courtID } = req.query;
+      const { date, courtId } = req.query;
+
+      if (!date || !courtId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Vui lòng cung cấp ngày và mã sân'
+        });
+      }
+
+      // Convert string date to Date object
+      const queryDate = new Date(date);
+      const startOfDay = new Date(queryDate.setHours(0, 0, 0, 0));
+      const endOfDay = new Date(queryDate.setHours(23, 59, 59, 999));
+
+      // Find all bookings for the selected court and date
       const bookedTimeslots = await BookingTimeslot.find({
-        courtID,
-        bookingDate: date
+        courtId,
+        $and: [
+          { startTime: { $gte: startOfDay } },
+          { endTime: { $lte: endOfDay } }
+        ]
+      }).populate({
+        path: 'bookingId',
+        select: 'status',
+        match: { status: { $ne: 'Cancelled' } }
       });
 
-      // Generate all possible timeslots
-      const allTimeslots = generateTimeslots();
-      
-      // Filter out booked timeslots
-      const availableTimeslots = allTimeslots.filter(timeslot => 
-        !isTimeslotBooked(timeslot, bookedTimeslots)
-      );
+      // Filter out cancelled bookings
+      const validBookedSlots = bookedTimeslots.filter(slot => slot.bookingId !== null);
 
-      res.json(availableTimeslots);
+      res.json({
+        success: true,
+        data: validBookedSlots.map(slot => ({
+          startTime: slot.startTime,
+          endTime: slot.endTime,
+          bookingId: slot.bookingId
+        }))
+      });
+
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error('Error in getAvailableTimeslots:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Lỗi khi kiểm tra timeslot',
+        error: error.message
+      });
     }
   }
 }

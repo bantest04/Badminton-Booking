@@ -1,3 +1,4 @@
 {
+  "/booking/choosecourt/page": "app/booking/choosecourt/page.js",
   "/booking/page": "app/booking/page.js"
 }

@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { LogOut } from 'lucide-react'
 import './globals.css'
+import { Toaster } from "@/components/ui/toaster"
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -20,31 +21,32 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className={inter.className}>
-        <header className="flex justify-between items-center p-4 bg-white shadow-sm">
-          <div className="flex space-x-4">
-            <Button variant="outline">Lịch hẹn</Button>
-            <Button variant="outline">Quản lý</Button>
-          </div>
-          <div className="flex items-center space-x-4">
-            <div>Địa chỉ sân: 86 Trần Hưng Đạo</div>
-            <div>Doanh thu: $1000</div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline">AdminBadminton</Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem>
-                  Đổi mật khẩu
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Đăng xuất</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </header>
+          <header className="flex justify-between items-center p-4 bg-white shadow-sm">
+            <div className="flex space-x-4">
+              <Button variant="outline">Lịch hẹn</Button>
+              <Button variant="outline">Quản lý</Button>
+            </div>
+            <div className="flex items-center space-x-4">
+              <div>Địa chỉ sân: 86 Trần Hưng Đạo</div>
+              <div>Doanh thu: $1000</div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline">AdminBadminton</Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem>
+                    Đổi mật khẩu
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Đăng xuất</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </header>
         {children}
+        <Toaster />
       </body>
     </html>
   )

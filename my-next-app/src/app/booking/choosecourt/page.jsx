@@ -4,14 +4,14 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { ChevronLeft, Search } from 'lucide-react'
-import Image from 'next/image';
+import Logo from '@/app/image/SanCauLong.jpg';
 
 export default function CourtSelection() {
   const [selectedCourt, setSelectedCourt] = useState('Random')
   const router = useRouter() 
 
   const courts = ['Sân số 1', 'Sân số 2', 'Sân số 3']
-
+  
   const handleCourtSelection = (court) => {
     setSelectedCourt(court)
     // Navigate to BookingPage with selected court in URL as query parameter
@@ -37,7 +37,7 @@ export default function CourtSelection() {
           {/* Random Court Option */}
           <div className={`border ${selectedCourt === 'Random' ? 'border-[#38a3df]' : 'border-gray-300'} rounded-lg p-4 mb-8 shadow-md hover:shadow-lg`}>
             <div className="flex flex-col items-center">
-              <Image src="" alt="Sân ngẫu nhiên" width={100} height={100} className="mb-2" />
+            <img src={Logo.src} alt="Sân ngẫu nhiên" width={100} height={100} className="mb-2" />
               <h3 className="text-lg font-semibold mb-2">Sân ngẫu nhiên</h3>
               <Button
                 onClick={() => handleCourtSelection('Sắp xếp sân ngẫu nhiên')}
@@ -52,7 +52,7 @@ export default function CourtSelection() {
           <div className="grid grid-cols-2 gap-4">
             {courts.map((court) => (
               <div key={court} className={`border ${selectedCourt === court ? 'border-[#38a3df]' : 'border-gray-300'} rounded-lg p-4 flex flex-col items-center shadow-md hover:shadow-lg`}>
-                <Image src="" alt={court} width={100} height={100} className="mb-2" />
+                <img src={Logo.src} alt={court} width={100} height={100} className="mb-2" />
                 <h3 className="text-lg font-semibold mb-2">{court}</h3>
                 <Button
                   onClick={() => handleCourtSelection(court)}

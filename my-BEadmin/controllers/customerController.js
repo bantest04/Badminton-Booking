@@ -1,14 +1,56 @@
 const Customer = require('../models/customer');
 const Booking = require('../models/booking');
+const { generateCustomerID } = require('../lib/idGenerator-utils');
 
 class CustomerController {
   async createCustomer(req, res) {
     try {
-      const customer = new Customer(req.body);
-      await customer.save();
-      res.status(201).json(customer);
+      const { fullName, phoneNumber, email } = req.body;
+
+      // Validate input
+      if (!fullName || !phoneNumber || !email) {
+        return res.status(400).json({ 
+          error: 'Vui lòng điền đầy đủ thông tin' 
+        });
+      }
+
+      let retries = 3;
+      let customer = null;
+
+      while (retries > 0 && !customer) {
+        try {
+          const customerID = generateCustomerID();
+          customer = new Customer({
+            customerID,
+            fullName,
+            phoneNumber,
+            email
+          });
+          await customer.save();
+        } catch (error) {
+          if (error.code === 11000 && retries > 1) {
+            // Nếu trùng ID và còn lượt thử, tiếp tục vòng lặp
+            retries--;
+            continue;
+          }
+          throw error; // Ném lỗi nếu không phải lỗi trùng ID hoặc hết lượt thử
+        }
+      }
+
+      if (!customer) {
+        throw new Error('Không thể tạo customer ID duy nhất sau nhiều lần thử');
+      }
+
+      res.status(201).json({
+        success: true,
+        data: customer
+      });
+
     } catch (error) {
-      res.status(400).json({ error: error.message });
+      console.error('Create customer error:', error);
+      res.status(400).json({
+        error: error.message || 'Không thể tạo thông tin khách hàng'
+      });
     }
   }
 

@@ -1,5 +1,8 @@
 const calculateTotalPrice = (court, duration) => {
-  if (!court || !duration) return 0;
+  if (!court || !duration)
+    {
+      throw new Error('Invalid court data or missing price information');
+    }
   const hours = duration / 60; // Chuyển đổi từ phút sang giờ
   return Math.round(court.pricePerHour * hours);
 };

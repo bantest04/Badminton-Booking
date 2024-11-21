@@ -6,11 +6,68 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { useRouter } from "next/navigation"
+import { useEffect, useState } from 'react'
 
 
 
 export default function PaymentConfirmation() {
   const router = useRouter()
+  const [bookingData, setBookingData] = useState({
+    courtID: '',
+    bookingDate: '',
+    timeslots: [{ dayOfWeek: '', duration: '' }],
+    customerInfo: { fullName: '', phoneNumber: '', email: '' },
+    totalPrice: 0,
+  });
+
+  useEffect(() => {
+    // Lấy dữ liệu booking từ localStorage
+    const data = localStorage.getItem('bookingData');
+    if (data) {
+      const parsedData = JSON.parse(data);
+      console.log(parsedData);
+      setBookingData(JSON.parse(data));
+    }
+  }, []);
+
+  const parseCustomDate = (dateString) => {
+    const [datePart, timePart] = dateString.split(" ");
+    const [day, month, year] = datePart.split("/").map(Number);
+    let [hour, minute] = timePart.split(":").map(Number);
+  
+    // Kiểm tra SA/CH để xác định AM/PM
+    if (dateString.includes("CH") && hour < 12) {
+      hour += 12;
+    } else if (dateString.includes("SA") && hour === 12) {
+      hour = 0;
+    }
+  
+    return new Date(year, month - 1, day, hour, minute);
+  };
+  
+  // Hàm định dạng ngày với SA/CH
+  const formatDateTime = (date) => {
+    if (!date) return "Ngày không hợp lệ";
+  
+    let hours = date.getHours();
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+    const seconds = date.getSeconds().toString().padStart(2, "0");
+    const period = hours >= 12 ? "CH" : "SA";
+  
+    // Chuyển đổi từ 24 giờ sang 12 giờ
+    hours = hours % 12 || 12;
+  
+    const day = date.getDate().toString().padStart(2, "0");
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const year = date.getFullYear();
+  
+    return ` ${day}/${month}/${year} ${hours}:${minutes} ${period}`;
+  };
+  
+  // Chuyển đổi và định dạng bookingDate
+  const formattedDate = bookingData.bookingDate ? formatDateTime(parseCustomDate(bookingData.bookingDate)) : "Ngày không hợp lệ";
+  
+
   const handlePayment2 = () => {
     router.push('/booking/payment2');
   };
@@ -37,24 +94,26 @@ export default function PaymentConfirmation() {
           <CardContent className="space-y-4">
             <div className="flex items-center">
               <Home className="h-5 w-5 mr-2 text-[#38a3df]" />
-              <span>IDBooker Badminton - Trải nghiệm 1</span>
+              <span> Badminton - 86 Trần Hưng Đạo - {bookingData.courtCount}</span>
             </div>
             <div className="flex items-center">
               <User className="h-5 w-5 mr-2 text-[#38a3df]" />
-              <span>tqhv - 0395342955</span>
+              <span>{bookingData.customerInfo.fullName} - {bookingData.customerInfo.phoneNumber}</span>
             </div>
             <div className="flex items-center">
               <Clock className="h-5 w-5 mr-2 text-[#38a3df]" />
-              <span>08/10/2024 05:00 SA</span>
+              {formattedDate ? (
+                <span>{formattedDate.toLocaleString("en-GB", { hour12: true })}</span>
+              ) : null}
             </div>
             <div className="flex justify-between">
-              <span>Thuê sân (vãng lai)</span>
-              <span>60.000 VND</span>
+              <span>Thuê sân ({bookingData.court})</span>
+              <span>{bookingData.totalPrice.toLocaleString()} VND</span>
             </div>
             <hr className="my-2 border-gray-200" />
             <div className="flex justify-between text-sm text-gray-500">
-              <span>sắp xếp sân ngẫu nhiên</span>
-              <span>60 phút</span>
+              <span>{bookingData.court}</span>
+              <span>{bookingData.timeDuration}</span>
             </div>
           </CardContent>
         </Card>
@@ -64,7 +123,7 @@ export default function PaymentConfirmation() {
             <CardTitle className="text-xl text-[#38a3df]">TỔNG THANH TOÁN TRƯỚC</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold mb-4">60.000 VND</div>
+            <div className="text-2xl font-bold mb-4">{bookingData.totalPrice.toLocaleString()} VND</div>
             <div className="text-lg text-[#38a3df] mb-2">PHƯƠNG THỨC THANH TOÁN</div>
             <RadioGroup defaultValue="qr">
               <div className="flex items-center space-x-2">

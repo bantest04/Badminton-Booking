@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const timeslotController = require('../controllers/timeslotController');
 
+router.get('/available', timeslotController.getAvailableTimeslots); 
 
 router.post('/', timeslotController.createTimeslot);
 
@@ -17,7 +18,5 @@ router.put('/:id', timeslotController.updateTimeslot);
 
 router.delete('/:id', timeslotController.deleteTimeslot);
 
-
-router.get('/available', timeslotController.getAvailableTimeslots);
 
 module.exports = router;

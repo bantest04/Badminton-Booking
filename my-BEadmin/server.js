@@ -1,9 +1,11 @@
 require('dotenv').config();
 const express = require('express');
+const { initializeCustomerID } = require('./lib/idGenerator-utils');
 const connectDB = require('./config/db');
 
-const app = express();
 
+const app = express();
+const cors = require('cors');
 const bookingRoutes = require('./routes/bookingRoutes');
 const courtRoutes = require('./routes/courtRoutes');
 const customerRoutes = require('./routes/customerRoutes');
@@ -13,7 +15,15 @@ const timeslotRoutes = require('./routes/timeslotRoutes');
 
 connectDB();
 
+initializeCustomerID();
+
+app.use(cors({ origin: 'http://localhost:3000',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+ }));
+
 app.use(express.json());
+
 
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/courts', courtRoutes);

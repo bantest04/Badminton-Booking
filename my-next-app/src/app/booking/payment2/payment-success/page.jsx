@@ -3,34 +3,8 @@
 import { Button } from "@/components/ui/button";
 import { useRouter } from 'next/navigation';
 import { CheckCircle } from 'lucide-react';
-import axios from 'axios';
-import { useEffect } from 'react';
-
 export default function PaymentSuccess() {
   const router = useRouter();
-  const appointmentId = 'APPOINTMENT_ID';  // Thay thế với ID của cuộc hẹn
-  const amount = 'AMOUNT';  // Thay thế với số tiền thanh toán
-
-  const handlePayment = async () => {
-    try {
-      const response = await axios.post('/booking/api/confirm-payment', { appointmentId, amount });
-
-      if (response.data.success) {
-        alert('Thanh toán thành công!');
-      } else {
-        alert('Thanh toán thất bại. Vui lòng thử lại!');
-        router.push('/payment-account');  // Chuyển lại trang thanh toán nếu thất bại
-      }
-    } catch (error) {
-      console.error('Lỗi khi thanh toán:', error);
-      alert('Không thể thực hiện thanh toán. Vui lòng thử lại sau.');
-      router.push('/payment-account');  // Chuyển lại trang thanh toán nếu lỗi
-    }
-  };
-
-  useEffect(() => {
-    handlePayment();
-  }, []);
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center">

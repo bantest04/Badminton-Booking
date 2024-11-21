@@ -12,20 +12,25 @@ import axios from 'axios';
 
 function BookingPage() {
   const router = useRouter();
-  const searchParams = useSearchParams() // Get search params from URL
-  const [courtCount, setCourtCount] = useState(1)
+  const searchParams = useSearchParams(); // Get search params from URL
+  const [courtCount, setCourtCount] = useState(1);
   const [showTimeOptions, setShowTimeOptions] = useState(false)
-  const [selectedTime, setSelectedTime] = useState('30 phút')
-  const [randomCourt, setRandomCourt] = useState(true)
-  const [selectedDateTime, setSelectedDateTime] = useState('Vui lòng chọn thời gian bắt đầu!') // Default message
+  const [selectedTime, setSelectedTime] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('selectedDuration') || '30 phút';
+    }
+    return '30 phút';
+  });
+  const [randomCourt, setRandomCourt] = useState(true); 
+  const [selectedDateTime, setSelectedDateTime] = useState('Vui lòng chọn thời gian bắt đầu!') ;// Default message
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [errors, setErrors] = useState({});
   const [showWarning, setShowWarning] = useState(false);
   const [total, setTotal] = useState(0); 
-  const selectedCourtFromQuery = searchParams.get('court') // Get court from query params
-  const timeOptions = Array.from({ length: 8 }, (_, index) => `${(index + 1) * 30} phút`)
+  const selectedCourtFromQuery = searchParams.get('court');
+  const timeOptions = Array.from({ length: 8 }, (_, index) => `${(index + 1) * 30} phút`);
 
   useEffect(() => {
     // Kiểm tra và hiển thị thông báo nếu số lượng sân > 4
@@ -33,21 +38,9 @@ function BookingPage() {
   }, [courtCount]);
 
   useEffect(() => {
-    setShowWarning(courtCount > 4);
-  }, [courtCount]);
-
-  useEffect(() => {
     // Lưu giá trị khi người dùng thay đổi
     localStorage.setItem('courtCount', courtCount);
   }, [courtCount]);
-
-  useEffect(() => {
-    const storedTime = localStorage.getItem('selectedTime');
-    if (storedTime) {
-      setSelectedTime(storedTime);
-    }
-  }, []);
-  
 
   useEffect(() => {
     const storedDateTime = sessionStorage.getItem('selectedDateTime');
@@ -58,6 +51,16 @@ function BookingPage() {
         sessionStorage.removeItem('selectedDateTime')
       }
   }, [])
+  useEffect(() => {
+    const savedTotal = sessionStorage.getItem('calculatedTotal');
+    if (savedTotal) {
+      setTotal(parseInt(savedTotal));
+    }
+    // Cleanup
+    return () => {
+      sessionStorage.removeItem('calculatedTotal');
+    };
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('name', name);
@@ -95,25 +98,68 @@ function BookingPage() {
     router.push('/booking/starttime') 
   }
 
-  const calculatePrice = (duration) => {
-    const basePrice = 35000;
-    const factor = parseInt(duration) / 30;
-    return basePrice * factor;
-  };
-
   useEffect(() => {
-  if (selectedTime) {
-    const price = calculatePrice(selectedTime);
-    setTotal(price);
-  }
-}, [selectedTime]);
+    if (selectedTime) {
+      localStorage.setItem('selectedDuration', selectedTime);
+    }
+    if (selectedTime && selectedDateTime !== 'Vui lòng chọn thời gian bắt đầu!') {
+      const duration = parseInt(selectedTime);
+      const price = calculatePrice(duration, selectedDateTime);
+      setTotal(price * courtCount);
+    }
+  }, [selectedTime, selectedDateTime, courtCount]);
   
 
-const handleTimeSelection = (time) => {
-  setSelectedTime(time);
-  setShowTimeOptions(false);
-  localStorage.setItem('selectedTime', time);
-};
+  const calculatePrice = (duration, dateTimeStr) => {
+    if (!dateTimeStr || dateTimeStr === 'Vui lòng chọn thời gian bắt đầu!') {
+      return null;
+    }
+  
+    // Parse thời gian từ chuỗi datetime
+    const [datePart, timePart, period] = dateTimeStr.split(' ');
+    let [hours] = timePart.split(':').map(Number);
+    
+    // Chuyển đổi sang 24h format
+    if (period === 'CH' && hours < 12) hours += 12;
+    if (period === 'SA' && hours === 12) hours = 0;
+  
+    // Parse ngày
+    const [day, month, year] = datePart.split('/').map(Number);
+    const date = new Date(year, month - 1, day);
+    const dayOfWeek = date.getDay();
+  
+    // Lấy thời lượng
+    const durationInMinutes = parseInt(duration);
+  
+    // Tính giá cơ bản
+    let basePrice;
+    if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+      basePrice = (hours >= 5 && hours < 16) ? 70000 : 130000;
+    } else {
+      basePrice = (hours >= 5 && hours < 8) ? 70000 : 130000;
+    }
+  
+    return Math.round((basePrice / 60) * durationInMinutes);
+  };
+  
+
+  useEffect(() => {
+    const storedPrice = sessionStorage.getItem('calculatedTotal');
+    const storedDuration = localStorage.getItem('selectedDuration');
+    
+    if (storedPrice) {
+      setTotal(parseInt(storedPrice));
+    }
+    if (storedDuration) {
+      setSelectedTime(storedDuration);
+    }
+  }, []);
+  
+
+  const handleTimeSelection = (time) => {
+    setSelectedTime(time);
+    setShowTimeOptions(false);
+  };
 
   const handleChooseCourt = () => {
     router.push('/booking/choosecourt');
@@ -140,8 +186,47 @@ const handleTimeSelection = (time) => {
     return Object.keys(newErrors).length === 0;
   };
 
+  const parseCustomDate = (dateString) => {
+    const [datePart, timePart, period] = dateString.split(" ");
+    const [day, month, year] = datePart.split("/").map(Number);
+    let [hours, minutes] = timePart.split(":").map(Number);
+    
+    // Convert 12h to 24h format
+    if (period === "CH" && hours < 12) {
+        hours += 12;
+    } else if (period === "SA" && hours === 12) {
+        hours = 0;
+    }
+    
+    return new Date(year, month - 1, day, hours, minutes);
+  };
+
   const handlePayment = () => {
-    router.push('/booking/payment');
+    const courtID = selectedCourtFromQuery || "A1"; // Đảm bảo courtID có giá trị hợp lệ
+    const dateObject = parseCustomDate(selectedDateTime); // Chuyển đổi selectedDateTime
+    const dayOfWeek = dateObject ? dateObject.getDay() : null;
+    // Thu thập thông tin booking và lưu vào localStorage
+    const bookingData = {
+      
+      // customerID: "C1", // Thay bằng ID thực tế của khách hàng
+      courtID, // Thay bằng ID thực tế của sân nếu có
+      bookingDate: selectedDateTime, // Ngày đặt
+      timeslots: [
+          {
+              dayOfWeek,// Lấy thứ trong tuần từ ngày đặt
+              duration: selectedTime // Thời gian đã chọn, tính bằng phút
+          }
+      ],
+      customerInfo: {
+          fullName: name,
+          phoneNumber: phone,
+          email: email
+      },
+      totalPrice: total
+    };
+  
+    localStorage.setItem('bookingData', JSON.stringify(bookingData));
+    router.push('/booking/payment-confirmation');
   };
 
   return (
@@ -297,10 +382,17 @@ const handleTimeSelection = (time) => {
           </div>
             ))}
           {/* Start Time Card */}
-          <div className="relative p-6 rounded-lg bg-white shadow-[0_0_15px_5px_rgba(56,163,223,0.2)] hover:shadow-[0_0_15px_5px_rgba(56,163,223,0.4)] transition-shadow duration-200"
-              onClick={navigateToStartTime}
-          >
-            <h2 className="text-2xl font-bold text-[#38a3df] mb-4">3. Thời Gian Bắt Đầu</h2>
+            <div className="relative p-6 rounded-lg bg-white shadow-[0_0_15px_5px_rgba(56,163,223,0.2)] hover:shadow-[0_0_15px_5px_rgba(56,163,223,0.4)] transition-shadow duration-200"
+                onClick={navigateToStartTime}
+            >
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold text-[#38a3df]">3. Thời Gian Bắt Đầu</h2>
+              {selectedDateTime !== 'Vui lòng chọn thời gian bắt đầu!' && (
+                <span className="text-xl font-semibold text-black">
+                  Tổng: {total.toLocaleString()} VND
+                </span>
+              )}
+            </div>
             <div 
               className="flex items-center justify-between p-4 rounded border border-gray-300 hover:border-[#38a3df] hover:shadow-lg transition duration-200"
             >

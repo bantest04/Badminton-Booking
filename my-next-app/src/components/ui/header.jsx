@@ -3,13 +3,16 @@
 import React from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/context/AuthContext'
+import Logo from '@/app/image/Logo VT Badminton Nov 21 2024.jpeg';
 
 export default function Header() {
     const { isLoggedIn, logout } = useAuth();
     return (
         <header className="bg-transparent text-black p-6 relative">
           <div className="container mx-auto flex justify-between items-center">
-            <div className="text-3xl font-bold">Logo</div>
+          <div className="flex items-center">
+            <img src={Logo.src} alt="Logo" className="h-16 w-auto" />
+            </div>
             <nav>
               <ul className="flex space-x-12 ">
                 <li>

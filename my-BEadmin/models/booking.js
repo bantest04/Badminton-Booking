@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const customer = require('./customer');
 
 const bookingSchema = new mongoose.Schema({
     bookingID: { type: String, required: true, unique: true },
