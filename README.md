@@ -22,22 +22,21 @@ Demonstrates full-stack skills: frontend (Next.js + React), backend (Node/Expres
 cd my-BEadmin
 npm install
 cp .env.example .env
+
 # configure MONGODB_URI and JWT secrets
 npm run dev
 User app (my-next-app)
-bash
-Sao chép mã
+
 cd ../my-next-app
 npm install
 npm run dev   # http://localhost:3000
 Admin app (FE-admin-app)
-bash
-Sao chép mã
+
 cd ../FE-admin-app
 npm install
 npm run dev   # http://localhost:5173
 
-API Examples
+##API Examples
 POST /api/auth/login → login user
 
 GET /api/courts → list courts
@@ -46,7 +45,7 @@ POST /api/bookings → create booking
 
 GET /api/bookings/me → current user bookings
 
-Example Code
+##Example Code
 Booking route (Express)
 
 router.post("/", requireAuth, async (req, res) => {
@@ -64,7 +63,7 @@ useEffect(() => {
     .then(r => r.json()).then(setRows);
 }, []);
 
-Roadmap
+## Roadmap
 Online payments (VNPay/MoMo)
 
 Notifications (email/SMS)
